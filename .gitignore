@@ -1,5 +1,8 @@
 # Python virtual enviroment.
 venv/*
-# Python cache files
+# Python cache files.
 *.pyc
 __pycache__
+
+# Secret token file.
+secret.py
