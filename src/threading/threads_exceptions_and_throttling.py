@@ -1,4 +1,5 @@
 import time
+import random
 from queue import Queue, Empty
 from threading import Thread
 
@@ -17,6 +18,8 @@ def get_historical_rates(date):
     URL = "https://openexchangerates.org/api/historical/"
     HEADERS = {"Authorization": f"Token {TOKEN}"}
     responce = requests.get(URL + date + ".json", headers=HEADERS)
+    if random.randint(0, 5) < 1:
+        responce.status_code = 429
     responce.raise_for_status()
     result = responce.json()["rates"]
     return date, result
