@@ -11,10 +11,10 @@ def get_historical_rates(date):
     responce = requests.get(URL + date + ".json", headers=HEADERS)
     responce.raise_for_status()
     result = r = responce.json()["rates"]
-    # table = PrettyTable()
-    # table.field_names = ["Date", "USD", "GBP", "EUR", "RUB"]
-    # table.add_row([date, r["USD"], r["GBP"], r["EUR"], r["RUB"]])
-    # print(table)
+    table = PrettyTable()
+    table.field_names = ["Date", "USD", "GBP", "EUR", "RUB"]
+    table.add_row([date, r["USD"], r["GBP"], r["EUR"], r["RUB"]])
+    print(table)
     return result
 
 def main():
