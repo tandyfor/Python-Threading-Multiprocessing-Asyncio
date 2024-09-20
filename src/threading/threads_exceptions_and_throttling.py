@@ -7,6 +7,7 @@ import requests
 from prettytable import PrettyTable
 
 from secret import TOKEN
+from token_bucket import Throttle
 
 THREAD_POOL_SIZE = 4
 DATES = ["2020-01-01", "2021-01-01", "2022-01-01", "2023-01-01", "2024-01-01"]
@@ -18,8 +19,8 @@ def get_historical_rates(date):
     URL = "https://openexchangerates.org/api/historical/"
     HEADERS = {"Authorization": f"Token {TOKEN}"}
     responce = requests.get(URL + date + ".json", headers=HEADERS)
-    if random.randint(0, 5) < 1:
-        responce.status_code = 429
+    # if random.randint(0, 5) < 1:
+    #     responce.status_code = 429
     responce.raise_for_status()
     result = responce.json()["rates"]
     return date, result
@@ -28,14 +29,17 @@ def present_result(date, result):
     table.add_row([date, result["USD"], result["GBP"], result["EUR"], result["RUB"]])
 
 
-
-def worker(work_queue, results_queue):
-    while not work_queue.empty():
+def worker(work_queue, results_queue, throttle):
+    # while not work_queue.empty():
+    while True:
         try:
             item = work_queue.get(block=False)
         except Empty:
             break
         else:
+            while not throttle.consume():
+                pass
+
             try:
                 result = get_historical_rates(item)
             except Exception as err:
@@ -45,14 +49,16 @@ def worker(work_queue, results_queue):
             finally:
                 work_queue.task_done()
 
+
 def main():
     work_queue = Queue()
     results_queue = Queue()
+    throttle = Throttle(10)
 
     for date in DATES:
         work_queue.put(date)
 
-    threads = [Thread(target=worker, args=(work_queue, results_queue)) for _ in range(THREAD_POOL_SIZE)]
+    threads = [Thread(target=worker, args=(work_queue, results_queue, throttle)) for _ in range(THREAD_POOL_SIZE)]
 
     for thread in threads:
         thread.start()
