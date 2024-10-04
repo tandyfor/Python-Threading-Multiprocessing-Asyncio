@@ -104,14 +104,14 @@ def printer(process_students: multiprocessing.Queue, examiners: multiprocessing.
 
     # while not students.empty() or not process_students.empty():
     while True: # TODO: Signal for stop. When examiners free, and students quere are empty.
-        if len(threading.enumerate()) <= 2:
-            break
         v.add_student(process_students)
         v.add_examiner(examiners)
         print("\033c")
         print(v)
         print(len(threading.enumerate()))
         time.sleep(0.1)
+        if len(threading.enumerate()) == 2 and process_students.empty() and examiners.empty():
+            break
 
     
 
