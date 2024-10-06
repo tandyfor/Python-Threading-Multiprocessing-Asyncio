@@ -7,17 +7,17 @@ import prettytable
 
 
 class Person():
-    def __init__(self, name, second_name) -> None:
+    def __init__(self, name, gender) -> None:
         self.name = name
-        self.second_name = second_name
+        self.gender = gender
 
     def __str__(self) -> str:
-        return f"{self.name} {self.second_name}"
+        return f"{self.name} {self.gender}"
 
 
 class Student(Person):
-    def __init__(self, name, second_name):
-        super().__init__(name, second_name)
+    def __init__(self, name, gender):
+        super().__init__(name, gender)
         self.status = "Очередь"
 
     def __str__(self):
@@ -31,8 +31,8 @@ class Student(Person):
     
     
 class Examiner(Person):
-    def __init__(self, name, second_name):
-        super().__init__(name, second_name)
+    def __init__(self, name, gender):
+        super().__init__(name, gender)
         self.status = "Свободен"
         self.start_time = time.time()
         self.student = None
@@ -62,24 +62,34 @@ class Viewer():
     def __init__(self) -> None:
         self.students_tabel = prettytable.PrettyTable()
         self.students_tabel.field_names = ["Студент", "Статус"]
+        
         self.examiner_tabel = prettytable.PrettyTable()
         self.examiner_tabel.field_names = ["Экзаменатор", "Текущий студент", "Всего студентов", "Завалил", "Время работы"]
+        # self.students: list[Student]
+        self.students = []
+        self.examiners: list[Examiner]
 
     def add_student(self, process_students: multiprocessing.Queue):
         if not process_students.empty():
-            data = process_students.get().get_row()
-            self.students_tabel.add_row(data)
+            data = process_students.get()
+            if data not in self.students:
+                self.students.append(data)
+                self.students_tabel.add_row(data.get_row())
 
     def add_examiner(self, examiners: multiprocessing.Queue):
         if not examiners.empty():
             data = examiners.get().get_row()
             self.examiner_tabel.add_row(data)
 
-    def update_student(self, student: Student):
-        pass
+    def update_student(self):
+        self.students_tabel.clear_rows()
+        for student in self.students:
+            self.students_tabel.add_row(student.get_row())
 
-    def update_examiner(self, examiner: Examiner):
-        pass
+    def update_examiner(self):
+        self.examiner_tabel.clear_rows()
+        for examiner in self.examiners:
+            self.examiner_tabel.add_row(examiner.get_row())
 
     def __str__(self):
         return f"{self.students_tabel}\n{self.examiner_tabel}"
@@ -101,17 +111,19 @@ def worker(examiner: Examiner):
 def printer(process_students: multiprocessing.Queue, examiners: multiprocessing.Queue):
     v = Viewer()
     time.sleep(0.1)
+    v.students = students_list
+    v.examiners = examers
 
-    # while not students.empty() or not process_students.empty():
-    while not (len(threading.enumerate()) == 2 and process_students.empty() and examiners.empty()): # TODO: Signal for stop. When examiners free, and students quere are empty.
-        v.add_student(process_students)
-        v.add_examiner(examiners)
+    # while not (len(threading.enumerate()) == 2 and process_students.empty() and examiners.empty()):
+    while not len(threading.enumerate()) == 2:
+        # v.add_student(process_students)
+        # v.add_examiner(examiners)
+        v.update_examiner()
+        v.update_student()
         print("\033c")
         print(v)
         print(len(threading.enumerate()))
         time.sleep(0.1)
-        # if len(threading.enumerate()) == 2 and process_students.empty() and examiners.empty():
-        #     break
 
     
 
@@ -121,15 +133,15 @@ if __name__ == "__main__":
     examiners = multiprocessing.Queue()
     
     students_list = [
-        Student("Mark", "Jonson"),
-        Student("David", "Martinez"),
-        Student("John", "Brown"),
-        Student("Ray", "Charles")
+        Student("Mark", "M"),
+        Student("David", "M"),
+        Student("John", "M"),
+        Student("Ray", "M")
     ]
 
     examers = [
-        Examiner("Dmitriy", "Fedorov"),
-        Examiner("Albert", "Einshtein")
+        Examiner("Dmitriy", "M"),
+        Examiner("Albert", "M")
     ]
 
 
