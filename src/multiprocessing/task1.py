@@ -13,7 +13,10 @@ MOOD = [BAD, NEUTRAL, GOOD]
 MOOD_WEIGHTS = [0.125, 0.625, 0.25]
 
 MALE = 0
-FEMALE = 1 
+FEMALE = 1
+
+SUCCESS = "Успех"
+FAIL = "Провалил"
 
 class Person():
     def __init__(self, name, gender) -> None:
@@ -46,6 +49,8 @@ class Examiner(Person):
         self.status = "Свободен"
         self.start_time = time.time()
         self.take_dinner = False
+        self.students_count = 0
+        self.flunked_student = 0
 
     def __str__(self):
         return "Examiner " + super().__str__() + f" {self.status}"
@@ -57,14 +62,14 @@ class Examiner(Person):
         self.status = student.name
         time.sleep(len(self.name) + random.randint(-1, 1))
         res = self.evaluate_work(student.get_answer())
-        student.status = "Сдал" if res else "Провалил"
+        student.status = SUCCESS if res else FAIL
 
     def get_work_time(self):
         return time.time() - self.start_time
 
     def get_row(self):
         time = f"{self.get_work_time():.2f}"
-        return self.name, self.status, None, None, time
+        return self.name, self.status, self.students_count, self.flunked_student, time
 
     def dinner(self):
         if not self.take_dinner and self.get_work_time() > 30:
@@ -83,7 +88,10 @@ class Exam():
     def exam(self):
         self.examiner.status = self.student.name
         time.sleep(len(self.examiner.name) + random.randint(-1, 1))
-        self.student.status = "Сдал" if self.mood != BAD else "Провалил"
+        self.student.status = SUCCESS if self.mood != BAD else FAIL
+        self.examiner.students_count += 1
+        if self.student.status == FAIL:
+            self.examiner.flunked_student += 1
 
 
 class Viewer():
