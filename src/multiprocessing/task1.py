@@ -45,7 +45,7 @@ class Examiner(Person):
         super().__init__(name, gender)
         self.status = "Свободен"
         self.start_time = time.time()
-        self.student = None
+        self.take_dinner = False
 
     def __str__(self):
         return "Examiner " + super().__str__() + f" {self.status}"
@@ -54,7 +54,7 @@ class Examiner(Person):
         return True if answer >= 3 else False
 
     def do_exam(self, student: Student):
-        self.student = student
+        self.status = student.name
         time.sleep(len(self.name) + random.randint(-1, 1))
         res = self.evaluate_work(student.get_answer())
         student.status = "Сдал" if res else "Провалил"
@@ -63,9 +63,15 @@ class Examiner(Person):
         return time.time() - self.start_time
 
     def get_row(self):
-        student = self.student.name if (self.student) else None
         time = f"{self.get_work_time():.2f}"
-        return self.name, self.student, None, None, time
+        return self.name, self.status, None, None, time
+
+    def dinner(self):
+        if not self.take_dinner and self.get_work_time() > 30:
+            self.status = '-'
+            self.take_dinner = True
+            time.sleep(random.randint(12, 18))
+
 
 
 class Exam():
@@ -73,7 +79,12 @@ class Exam():
         self.examiner = examiner
         self.student = student
         self.mood = random.choices(MOOD, MOOD_WEIGHTS, k=1)[0]
-        print(self.mood)
+    
+    def exam(self):
+        self.examiner.status = self.student.name
+        time.sleep(len(self.examiner.name) + random.randint(-1, 1))
+        self.student.status = "Сдал" if self.mood != BAD else "Провалил"
+
 
 class Viewer():
     def __init__(self) -> None:
@@ -107,11 +118,10 @@ def worker(examiner: Examiner):
         student = students.get()
         student.status = "У экзаменатора"
         exam = Exam(examiner, student)
-        examiner.do_exam(student)
-        examiners.put(examiner)
+        exam.exam()
         delta = time.time() - start
         print(examiner, student, f" exam time: {delta:.2f} all work time: {examiner.get_work_time():.2f}")
-
+        examiner.dinner()
         
 def printer(examiners: multiprocessing.Queue):
     v = Viewer()
@@ -137,6 +147,12 @@ if __name__ == "__main__":
         Student("Mark", "M"),
         Student("David", "M"),
         Student("John", "M"),
+        Student("Mark", "M"),
+        Student("David", "M"),
+        Student("John", "M"),
+        Student("Mark", "M"),
+        Student("David", "M"),
+        Student("John", "M"),
         Student("Ray", "M")
     ]
 
@@ -151,9 +167,9 @@ if __name__ == "__main__":
 
     processes = []
     
-    p = multiprocessing.Process(target=printer, args=(examiners, ))
-    processes.append(p)
-    p.start()
+    printer_thread = multiprocessing.Process(target=printer, args=(examiners, ))
+    # processes.append(p)
+    printer_thread.start()
 
     for examiner in examers:
         p = multiprocessing.Process(target=worker, args=(examiner, ))
@@ -163,5 +179,7 @@ if __name__ == "__main__":
 
     for p in processes:
         p.join()
+
+    printer_thread.join()
 
     
