@@ -92,9 +92,21 @@ class Exam():
     
     def ask_questions(self):
         for question in self.questions:
-            student_answer = self.get_answer(question)
-            true_answer = self.check_answer(question)
+            true_answers = []
+            student_answers = [] 
+            student_answers.append(self.get_answer(question))
+            while random.random() < 1 / 3:
+                student_answer = self.get_answer(question)
+                if student_answer not in student_answers:
+                    student_answers.append(student_answer)
+
+            true_answers.append(self.check_answer(question))
+            while random.random() < 1 / 3:
+                true_answer = self.check_answer(question)
+                if true_answer not in true_answers:
+                    true_answers.append(true_answer)
             
+
 
     def get_answer(self, question: list[str]):
         return random.choices(question, self.get_weights(len(question), self.student.gender), k=1)[0]
@@ -103,7 +115,13 @@ class Exam():
         return random.choices(question, self.get_weights(len(question), self.examiner.gender), k=1)[0]
 
 
-    def validate_exam(self):
+    def validate_response(self, student_answers: list[str], true_answers: list[str]):
+        student_answers.sort()
+        true_answers.sort()
+        true_count = 0
+        for answer in student_answers:
+            true_count = true_count + 1 if answer in true_answers else true_count
+        
         pass
 
 
