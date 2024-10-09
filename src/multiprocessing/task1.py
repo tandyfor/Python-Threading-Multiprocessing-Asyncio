@@ -15,7 +15,7 @@ MOOD_WEIGHTS = [0.125, 0.625, 0.25]
 MALE = 0
 FEMALE = 1
 
-SUCCESS = "Успех"
+SUCCESS = "Сдал"
 FAIL = "Провалил"
 
 class Person():
@@ -93,6 +93,8 @@ class Exam():
         if self.student.status == FAIL:
             self.examiner.flunked_student += 1
 
+    
+
 
 class Viewer():
     def __init__(self) -> None:
@@ -120,7 +122,7 @@ class Viewer():
         
 
 
-def worker(examiner: Examiner):
+def worker(examiner: Examiner, students: list[Student]):
     while not students.empty():
         start = time.time()
         student = students.get()
@@ -131,7 +133,7 @@ def worker(examiner: Examiner):
         print(examiner, student, f" exam time: {delta:.2f} all work time: {examiner.get_work_time():.2f}")
         examiner.dinner()
         
-def printer(examiners: multiprocessing.Queue):
+def printer(examiners: multiprocessing.Queue, students_list: list[Student], examers: list[Examiner]):
     v = Viewer()
     time.sleep(0.1)
     v.students = students_list
@@ -145,42 +147,31 @@ def printer(examiners: multiprocessing.Queue):
         print(len(threading.enumerate()))
         time.sleep(0.05)
 
-    
+def read_file(filename: str):
+    with open(filename, "r") as file:
+        return file.readlines()
 
-if __name__ == "__main__":
+
+def main():
+# if __name__ == "__main__": 
     students = multiprocessing.Queue()
     examiners = multiprocessing.Queue()
     
-    students_list = [
-        Student("Mark", "M"),
-        Student("David", "M"),
-        Student("John", "M"),
-        Student("Mark", "M"),
-        Student("David", "M"),
-        Student("John", "M"),
-        Student("Mark", "M"),
-        Student("David", "M"),
-        Student("John", "M"),
-        Student("Ray", "M")
-    ]
-
-    examers = [
-        Examiner("Dmitriy", "M"),
-        Examiner("Albert", "M")
-    ]
-
+    students_list = list(map(lambda line: Student(line.split()[0], line.split()[1]), read_file("students.txt")))
+    examers = list(map(lambda line: Examiner(line.split()[0], line.split()[1]), read_file("examiners.txt")))
+    questions = read_file("questions.txt")
 
     for student in students_list:
         students.put(student)
 
     processes = []
     
-    printer_thread = multiprocessing.Process(target=printer, args=(examiners, ))
+    printer_thread = multiprocessing.Process(target=printer, args=(examiners, students_list, examers))
     # processes.append(p)
     printer_thread.start()
 
     for examiner in examers:
-        p = multiprocessing.Process(target=worker, args=(examiner, ))
+        p = multiprocessing.Process(target=worker, args=(examiner, students))
         processes.append(p)
         p.start()
 
@@ -189,5 +180,7 @@ if __name__ == "__main__":
         p.join()
 
     printer_thread.join()
+    print(questions)
 
-    
+if __name__ == "__main__":
+    main()
