@@ -12,8 +12,8 @@ GOOD = 2
 MOOD = [BAD, NEUTRAL, GOOD]
 MOOD_WEIGHTS = [0.125, 0.625, 0.25]
 
-MALE = 0
-FEMALE = 1
+MALE = "М"
+FEMALE = "Ж"
 
 SUCCESS = "Сдал"
 FAIL = "Провалил"
@@ -36,9 +36,6 @@ class Student(Person):
     def __str__(self):
         return "Student " + super().__str__() + f" {self.status}"
     
-    def get_answer(self):
-        return random.randint(2, 5)
-
     def get_row(self):
         return self.name, self.status
     
@@ -55,15 +52,6 @@ class Examiner(Person):
     def __str__(self):
         return "Examiner " + super().__str__() + f" {self.status}"
     
-    def evaluate_work(self, answer):
-        return True if answer >= 3 else False
-
-    def do_exam(self, student: Student):
-        self.status = student.name
-        time.sleep(len(self.name) + random.randint(-1, 1))
-        res = self.evaluate_work(student.get_answer())
-        student.status = SUCCESS if res else FAIL
-
     def get_work_time(self):
         return time.time() - self.start_time
 
@@ -80,11 +68,12 @@ class Examiner(Person):
 
 
 class Exam():
-    def __init__(self, examiner: Examiner, student: Student) -> None:
+    def __init__(self, examiner: Examiner, student: Student, questions: list[str]) -> None:
         self.examiner = examiner
         self.student = student
+        self.questions = random.choices(questions, k=3)
         self.mood = random.choices(MOOD, MOOD_WEIGHTS, k=1)[0]
-    
+
     def exam(self):
         self.examiner.status = self.student.name
         time.sleep(len(self.examiner.name) + random.randint(-1, 1))
@@ -93,7 +82,30 @@ class Exam():
         if self.student.status == FAIL:
             self.examiner.flunked_student += 1
 
+    def get_weights(self, len: int, gender: str):
+        sequence = [1/2, 1/3]
+        current = 3
+        for _ in range(2, len):
+            current *= 2
+            sequence.append(1 / current)
+        return sequence[0:len] if gender == MALE else list(reversed(sequence))[0:len]
     
+    def ask_questions(self):
+        for question in self.questions:
+            student_answer = self.get_answer(question)
+            true_answer = self.check_answer(question)
+            
+
+    def get_answer(self, question: list[str]):
+        return random.choices(question, self.get_weights(len(question), self.student.gender), k=1)[0]
+
+    def check_answer(self, question: list[str]):
+        return random.choices(question, self.get_weights(len(question), self.examiner.gender), k=1)[0]
+
+
+    def validate_exam(self):
+        pass
+
 
 
 class Viewer():
@@ -122,12 +134,12 @@ class Viewer():
         
 
 
-def worker(examiner: Examiner, students: list[Student]):
+def worker(examiner: Examiner, students: list[Student], questions: list[str]):
     while not students.empty():
         start = time.time()
         student = students.get()
         student.status = "У экзаменатора"
-        exam = Exam(examiner, student)
+        exam = Exam(examiner, student, questions)
         exam.exam()
         delta = time.time() - start
         print(examiner, student, f" exam time: {delta:.2f} all work time: {examiner.get_work_time():.2f}")
@@ -153,7 +165,6 @@ def read_file(filename: str):
 
 
 def main():
-# if __name__ == "__main__": 
     students = multiprocessing.Queue()
     examiners = multiprocessing.Queue()
     
@@ -167,11 +178,10 @@ def main():
     processes = []
     
     printer_thread = multiprocessing.Process(target=printer, args=(examiners, students_list, examers))
-    # processes.append(p)
     printer_thread.start()
 
     for examiner in examers:
-        p = multiprocessing.Process(target=worker, args=(examiner, students))
+        p = multiprocessing.Process(target=worker, args=(examiner, students, questions))
         processes.append(p)
         p.start()
 
@@ -180,7 +190,6 @@ def main():
         p.join()
 
     printer_thread.join()
-    print(questions)
 
 if __name__ == "__main__":
     main()
