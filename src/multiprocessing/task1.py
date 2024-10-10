@@ -77,8 +77,14 @@ class Exam():
     def exam(self):
         self.examiner.status = self.student.name
         time.sleep(len(self.examiner.name) + random.randint(-1, 1))
-        self.student.status = SUCCESS if self.mood != BAD else FAIL
+        # self.student.status = SUCCESS if self.mood != BAD else FAIL
         self.examiner.students_count += 1
+        if self.mood == BAD:
+            self.student.status = FAIL
+        elif self.mood == GOOD:
+            self.student.status = SUCCESS
+        else:
+            self.student.status = SUCCESS if self.ask_questions() else FAIL
         if self.student.status == FAIL:
             self.examiner.flunked_student += 1
 
@@ -91,6 +97,7 @@ class Exam():
         return sequence[0:len] if gender == MALE else list(reversed(sequence))[0:len]
     
     def ask_questions(self):
+        results = []
         for question in self.questions:
             true_answers = []
             student_answers = [] 
@@ -106,6 +113,9 @@ class Exam():
                 if true_answer not in true_answers:
                     true_answers.append(true_answer)
             
+            results.append(self.get_grade(student_answers, true_answers))
+        return True if results.count(True) > 1 else False
+            
 
 
     def get_answer(self, question: list[str]):
@@ -115,15 +125,15 @@ class Exam():
         return random.choices(question, self.get_weights(len(question), self.examiner.gender), k=1)[0]
 
 
-    def validate_response(self, student_answers: list[str], true_answers: list[str]):
-        student_answers.sort()
-        true_answers.sort()
+    def get_grade(self, student_answers: list[str], true_answers: list[str]):
         true_count = 0
+        false_count = 0
         for answer in student_answers:
-            true_count = true_count + 1 if answer in true_answers else true_count
-        
-        pass
-
+            if answer in true_answers:
+                true_count += 1
+            else:
+                false_count += 1
+        return True if (true_count - false_count) / len(true_answers) > 0.5 else False
 
 
 class Viewer():
