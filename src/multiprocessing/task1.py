@@ -32,6 +32,7 @@ class Student(Person):
     def __init__(self, name, gender):
         super().__init__(name, gender)
         self.status = "Очередь"
+        self.exam_time = 0
 
     def __str__(self):
         return "Student " + super().__str__() + f" {self.status}"
@@ -66,9 +67,17 @@ class Examiner(Person):
             time.sleep(random.randint(12, 18))
 
 
+class Question():
+    def __init__(self, question):
+        self.question = question
+        self.success_count = 0
+
+    def get_question(self):
+        return self.question
+
 
 class Exam():
-    def __init__(self, examiner: Examiner, student: Student, questions: list[str]) -> None:
+    def __init__(self, examiner: Examiner, student: Student, questions: list[Question]) -> None:
         self.examiner = examiner
         self.student = student
         self.questions = random.choices(questions, k=3)
@@ -76,8 +85,9 @@ class Exam():
 
     def exam(self):
         self.examiner.status = self.student.name
-        time.sleep(len(self.examiner.name) + random.randint(-1, 1))
-        # self.student.status = SUCCESS if self.mood != BAD else FAIL
+        exam_time = len(self.examiner.name) + random.randint(-1, 1) 
+        time.sleep(exam_time)
+        self.student.exam_time = exam_time
         self.examiner.students_count += 1
         if self.mood == BAD:
             self.student.status = FAIL
@@ -101,29 +111,29 @@ class Exam():
         for question in self.questions:
             true_answers = []
             student_answers = [] 
-            student_answers.append(self.get_answer(question))
+            student_answers.append(self.get_answer(question.get_question()))
             while random.random() < 1 / 3:
-                student_answer = self.get_answer(question)
+                student_answer = self.get_answer(question.get_question())
                 if student_answer not in student_answers:
                     student_answers.append(student_answer)
 
-            true_answers.append(self.check_answer(question))
+            true_answers.append(self.check_answer(question.get_question()))
             while random.random() < 1 / 3:
-                true_answer = self.check_answer(question)
+                true_answer = self.check_answer(question.get_question())
                 if true_answer not in true_answers:
                     true_answers.append(true_answer)
             
-            results.append(self.get_grade(student_answers, true_answers))
+            grade = self.get_grade(student_answers, true_answers)
+            results.append(grade)
+            if grade:
+                question.success_count += 1
         return True if results.count(True) > 1 else False
-            
-
 
     def get_answer(self, question: list[str]):
         return random.choices(question, self.get_weights(len(question), self.student.gender), k=1)[0]
 
     def check_answer(self, question: list[str]):
         return random.choices(question, self.get_weights(len(question), self.examiner.gender), k=1)[0]
-
 
     def get_grade(self, student_answers: list[str], true_answers: list[str]):
         true_count = 0
@@ -134,7 +144,6 @@ class Exam():
             else:
                 false_count += 1
         return True if (true_count - false_count) / len(true_answers) > 0.5 else False
-
 
 class Viewer():
     def __init__(self) -> None:
@@ -198,7 +207,7 @@ def main():
     
     students_list = list(map(lambda line: Student(line.split()[0], line.split()[1]), read_file("students.txt")))
     examers = list(map(lambda line: Examiner(line.split()[0], line.split()[1]), read_file("examiners.txt")))
-    questions = read_file("questions.txt")
+    questions = list(map(Question, read_file("questions.txt")))
 
     for student in students_list:
         students.put(student)
@@ -218,6 +227,14 @@ def main():
         p.join()
 
     printer_thread.join()
+
+    v = Viewer()
+    v.students = students_list
+    v.examiners = examers
+    v.update_examiner()
+    v.update_student()
+
+    print(v)
 
 if __name__ == "__main__":
     main()
