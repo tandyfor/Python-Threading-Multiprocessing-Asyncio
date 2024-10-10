@@ -187,6 +187,7 @@ def worker(examiner: Examiner, students: list[Student], questions: list[str]):
         
 def printer(examiners: multiprocessing.Queue, students_list: list[Student], examers: list[Examiner]):
     v = Viewer()
+    s = time.time()
     time.sleep(0.1)
     v.students = students_list
     v.examiners = examers
@@ -196,7 +197,9 @@ def printer(examiners: multiprocessing.Queue, students_list: list[Student], exam
         v.update_student()
         print("\033c")
         print(v)
-        print(len(threading.enumerate()))
+        print(f"Осталось в очереди {len(list(filter(lambda x: x.status == "Очередь", students_list)))} из {len(students_list)}")
+        print(f"Время с начала экзамена: {time.time() - s:.2f}")
+        # print(len(threading.enumerate()))
         time.sleep(0.05)
 
 def read_file(filename: str):
@@ -231,14 +234,23 @@ def main():
 
     printer_thread.join()
 
-    for i in students_list:
-        print(i)
+    # for i in students_list:
+    #     print(i)
 
-    for i in examers:
-        print(i)
+    # for i in examers:
+    #     print(i)
 
-    for i in questions:
-        print(i)
+    # for i in questions:
+    #     print(i)
+
+    v = Viewer()
+    v.students = students_list
+    v.examiners = examers
+    v.update_examiner()
+    v.update_student()
+    print("\033c")
+    print(v)
+    
 
 if __name__ == "__main__":
     main()
