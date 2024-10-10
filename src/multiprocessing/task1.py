@@ -72,6 +72,9 @@ class Question():
         self.question = question
         self.success_count = 0
 
+    def __str__(self) -> str:
+        return f"{self.question} {self.success_count}"
+
     def get_question(self):
         return self.question
 
@@ -228,13 +231,14 @@ def main():
 
     printer_thread.join()
 
-    v = Viewer()
-    v.students = students_list
-    v.examiners = examers
-    v.update_examiner()
-    v.update_student()
+    for i in students_list:
+        print(i)
 
-    print(v)
+    for i in examers:
+        print(i)
+
+    for i in questions:
+        print(i)
 
 if __name__ == "__main__":
     main()
