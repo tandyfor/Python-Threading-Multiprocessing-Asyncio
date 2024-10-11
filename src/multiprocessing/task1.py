@@ -92,12 +92,13 @@ class Exam():
         time.sleep(exam_time)
         self.student.exam_time = exam_time
         self.examiner.students_count += 1
+        grade = self.ask_questions()
         if self.mood == BAD:
             self.student.status = FAIL
         elif self.mood == GOOD:
             self.student.status = SUCCESS
         else:
-            self.student.status = SUCCESS if self.ask_questions() else FAIL
+            self.student.status = SUCCESS if grade else FAIL
         if self.student.status == FAIL:
             self.examiner.flunked_student += 1
 
@@ -199,7 +200,6 @@ def printer(examiners: multiprocessing.Queue, students_list: list[Student], exam
         print(v)
         print(f"Осталось в очереди {len(list(filter(lambda x: x.status == "Очередь", students_list)))} из {len(students_list)}")
         print(f"Время с начала экзамена: {time.time() - s:.2f}")
-        # print(len(threading.enumerate()))
         time.sleep(0.05)
 
 def read_file(filename: str):
@@ -228,11 +228,44 @@ def main():
         processes.append(p)
         p.start()
 
+    s = time.time()
 
     for p in processes:
         p.join()
 
     printer_thread.join()
+
+
+    v = Viewer()
+    v.students = students_list
+    v.examiners = examers
+    v.update_examiner()
+    v.update_student()
+    print("\033c")
+    print(v)
+    print(f"Время с момента начала экзамена и до момента и его завершения: {time.time() - s:.2f}")
+
+    success_students = list(filter(lambda x: x.status == SUCCESS, students_list))
+    success_students.sort(key=lambda x: x.exam_time)
+    
+    print(f"Имена лучших студентов: {success_students[0]}")
+
+    examers.sort(key=lambda x: x.flunked_student / x.students_count)
+
+    print(f"Имена лучших экзаменаторов: {examers[0]}")
+    
+    fail_students = list(filter(lambda x: x.status == FAIL, students_list))
+    fail_students.sort(key=lambda x: x.exam_time)
+
+    print(f"Имена студентов, которых после экзамена отчислят: {fail_students[0]}")
+
+    questions.sort(key=lambda x: x.success_count)
+
+    print(f"Лучшие вопросы: {questions[-1]}")
+
+
+
+    print(f"Вывод: {"экзамен удался" if len(success_students) / len(students_list) > 0.85 else "экзамен не удался"}")
 
     # for i in students_list:
     #     print(i)
@@ -242,15 +275,6 @@ def main():
 
     # for i in questions:
     #     print(i)
-
-    v = Viewer()
-    v.students = students_list
-    v.examiners = examers
-    v.update_examiner()
-    v.update_student()
-    print("\033c")
-    print(v)
-    
 
 if __name__ == "__main__":
     main()
