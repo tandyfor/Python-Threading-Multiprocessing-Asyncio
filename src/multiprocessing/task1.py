@@ -4,6 +4,7 @@ import multiprocessing.dummy as multiprocessing
 import threading
 
 import prettytable
+import curses
 
 BAD = 0
 NEUTRAL = 1
@@ -188,20 +189,33 @@ def worker(examiner: Examiner, students: list[Student], questions: list[str]):
         examiner.dinner()
         
 def printer(examiners: multiprocessing.Queue, students_list: list[Student], examers: list[Examiner]):
-    v = Viewer()
-    s = time.time()
+    stdscr = curses.initscr()
+    curses.noecho()
+    curses.cbreak()
+    stdscr.keypad(True)
+    curses.curs_set(0)
     time.sleep(0.1)
+    height, width = stdscr.getmaxyx()
+    
+    v = Viewer()
     v.students = students_list
     v.examiners = examers
+    s = time.time()
 
     while not len(threading.enumerate()) == 2:
         v.update_examiner()
         v.update_student()
-        print("\033c")
-        print(v)
-        print(f"Осталось в очереди {len(list(filter(lambda x: x.status == "Очередь", students_list)))} из {len(students_list)}")
-        print(f"Время с начала экзамена: {time.time() - s:.2f}")
-        time.sleep(0.05)
+        stdscr.clear()
+        add_s_1 = f"\nОсталось в очереди {len(list(filter(lambda x: x.status == 'Очередь', students_list)))} из {len(students_list)}"
+        add_s_2 = f"\nВремя с начала экзамена: {time.time() - s:.2f}"
+        stdscr.addstr(0, 0, str(v) + add_s_1 + add_s_2)
+        stdscr.refresh()
+        stdscr.refresh()
+        time.sleep(0.1)
+    
+    curses.nocbreak(); stdscr.keypad(False); curses.echo()
+    curses.endwin()
+
 
 def read_file(filename: str):
     with open(filename, "r") as file:
