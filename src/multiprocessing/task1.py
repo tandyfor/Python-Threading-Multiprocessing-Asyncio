@@ -26,7 +26,7 @@ class Person():
         self.status = None
 
     def __str__(self) -> str:
-        return f"{self.name} {self.gender}"
+        return f"{self.name}"
 
 
 class Student(Person):
@@ -35,9 +35,6 @@ class Student(Person):
         self.status = IN_LINE
         self.exam_time = 0
 
-    def __str__(self):
-        return "Student " + super().__str__() + f" {self.status}"
-    
     def get_row(self):
         return self.name, self.status
     
@@ -50,9 +47,6 @@ class Examiner(Person):
         self.take_dinner = False
         self.students_count = 0
         self.flunked_student = 0
-
-    def __str__(self):
-        return "Examiner " + super().__str__() + f" {self.status}"
     
     def get_work_time(self):
         return time.time() - self.start_time
@@ -74,7 +68,7 @@ class Question():
         self.success_count = 0
 
     def __str__(self) -> str:
-        return f"{self.question} {self.success_count}"
+        return f"{self.question}"
 
     def get_question(self):
         return self.question
@@ -178,7 +172,6 @@ class Viewer():
         return f"{self.students_tabel}\n{self.examiner_tabel}"
         
 
-
 def worker(examiner: Examiner, students: list[Student], questions: list[str]):
     while not students.empty():
         start = time.time()
@@ -208,7 +201,40 @@ def printer(examiners: multiprocessing.Queue, students_list: list[Student], exam
 def read_file(filename: str):
     with open(filename, "r") as file:
         return file.readlines()
+    
+def print_top(values_list, output_str):
+    if values_list:
+        print(output_str, end="")
+        for i, value in enumerate(values_list):
+            print(value, end=" ")
+            if i == 2:
+                break
+        print()
 
+def end_print(students_list, examers, questions, s):
+    v = Viewer()
+    v.students = students_list
+    v.examiners = examers
+    v.update_examiner()
+    v.update_student()
+    v.examiner_tabel.del_column("Текущий студент")
+    print("\033c")
+    print(v)
+    print(f"Время с момента начала экзамена и до момента и его завершения: {time.time() - s:.2f}")
+
+    success_students = list(filter(lambda x: x.status == SUCCESS, students_list))
+    success_students.sort(key=lambda x: x.exam_time)
+    print_top(success_students, "Имена лучших студентов: ")
+    
+    examers = list(filter(lambda x: x.students_count != 0, examers))
+    examers.sort(key=lambda x: x.flunked_student / x.students_count)
+    print_top(examers, "Имена лучших экзаменаторов: ")
+    fail_students = list(filter(lambda x: x.status == FAIL, students_list))
+    fail_students.sort(key=lambda x: x.exam_time)
+    print_top(fail_students, "Имена студентов, которых после экзамена отчислят: ")
+    questions.sort(key=lambda x: x.success_count)
+    print_top(questions, "Лучшие вопросы: ")
+    print(f"Вывод: {"экзамен удался" if len(success_students) / len(students_list) > 0.85 else "экзамен не удался"}")
 
 def main():
     students = multiprocessing.Queue()
@@ -237,47 +263,8 @@ def main():
         p.join()
 
     printer_thread.join()
+    end_print(students_list, examers, questions, s)
 
-
-    v = Viewer()
-    v.students = students_list
-    v.examiners = examers
-    v.update_examiner()
-    v.update_student()
-    print("\033c")
-    print(v)
-    print(f"Время с момента начала экзамена и до момента и его завершения: {time.time() - s:.2f}")
-
-    success_students = list(filter(lambda x: x.status == SUCCESS, students_list))
-    success_students.sort(key=lambda x: x.exam_time)
-    
-    print(f"Имена лучших студентов: {success_students[0]}")
-
-    examers.sort(key=lambda x: x.flunked_student / x.students_count)
-
-    print(f"Имена лучших экзаменаторов: {examers[0]}")
-    
-    fail_students = list(filter(lambda x: x.status == FAIL, students_list))
-    fail_students.sort(key=lambda x: x.exam_time)
-
-    print(f"Имена студентов, которых после экзамена отчислят: {fail_students[0]}")
-
-    questions.sort(key=lambda x: x.success_count)
-
-    print(f"Лучшие вопросы: {questions[-1]}")
-
-
-
-    print(f"Вывод: {"экзамен удался" if len(success_students) / len(students_list) > 0.85 else "экзамен не удался"}")
-
-    # for i in students_list:
-    #     print(i)
-
-    # for i in examers:
-    #     print(i)
-
-    # for i in questions:
-    #     print(i)
 
 if __name__ == "__main__":
     main()
