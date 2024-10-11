@@ -44,12 +44,16 @@ class Examiner(Person):
         super().__init__(name, gender)
         self.status = "Свободен"
         self.start_time = time.time()
+        self.work_time = 0
         self.take_dinner = False
         self.students_count = 0
         self.flunked_student = 0
     
     def get_work_time(self):
-        return time.time() - self.start_time
+        return self.work_time
+    
+    def update_work_time(self):
+        self.work_time = time.time() - self.start_time
 
     def get_row(self):
         time = f"{self.get_work_time():.2f}"
@@ -68,7 +72,7 @@ class Question():
         self.success_count = 0
 
     def __str__(self) -> str:
-        return f"{self.question}"
+        return self.question.rstrip()
 
     def get_question(self):
         return self.question
@@ -96,6 +100,7 @@ class Exam():
             self.student.status = SUCCESS if grade else FAIL
         if self.student.status == FAIL:
             self.examiner.flunked_student += 1
+        self.examiner.update_work_time()
 
     def get_weights(self, len: int, gender: str):
         sequence = [1/2, 1/3]
@@ -206,7 +211,7 @@ def print_top(values_list, output_str):
     if values_list:
         print(output_str, end="")
         for i, value in enumerate(values_list):
-            print(value, end=" ")
+            print(value, end=", " if i != 2 else "")
             if i == 2:
                 break
         print()
