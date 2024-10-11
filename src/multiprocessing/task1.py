@@ -15,6 +15,7 @@ MOOD_WEIGHTS = [0.125, 0.625, 0.25]
 MALE = "М"
 FEMALE = "Ж"
 
+IN_LINE = "Очередь"
 SUCCESS = "Сдал"
 FAIL = "Провалил"
 
@@ -31,7 +32,7 @@ class Person():
 class Student(Person):
     def __init__(self, name, gender):
         super().__init__(name, gender)
-        self.status = "Очередь"
+        self.status = IN_LINE
         self.exam_time = 0
 
     def __str__(self):
@@ -160,8 +161,11 @@ class Viewer():
         self.students: list[Student]
         self.examiners: list[Examiner]
 
+        self.status_dict = {IN_LINE : 0, SUCCESS : 1, FAIL : 2}
+
     def update_student(self):
         self.students_tabel.clear_rows()
+        self.students.sort(key=lambda x: self.status_dict.get(x.status))
         for student in self.students:
             self.students_tabel.add_row(student.get_row())
 
@@ -179,7 +183,6 @@ def worker(examiner: Examiner, students: list[Student], questions: list[str]):
     while not students.empty():
         start = time.time()
         student = students.get()
-        student.status = "У экзаменатора"
         exam = Exam(examiner, student, questions)
         exam.exam()
         delta = time.time() - start
