@@ -9,11 +9,12 @@ import prettytable
 
 SUCCESS = "Успех"
 FAIL = "Ошибка"
+IN_PROCESS = "В процессе"
 
 class Link(): 
     def __init__(self, link: str):
         self.link = link # TODO: Добавить поиск расширения файла для корректного сохранения.
-        self.status = None
+        self.status = IN_PROCESS
 
     def __str__(self):
         return f"{self.link} {self.status}"
@@ -26,6 +27,7 @@ class Downloader():
         self.links_list = links_list
         self.path = path
         self.n = 0
+        self.viewer = Viewer(self.links_list)
 
     async def download(self, link: Link):
         async with aiohttp.ClientSession() as session:
@@ -41,6 +43,7 @@ class Downloader():
                         print(responce.status)
             except:
                 link.status = FAIL
+        print(self.viewer)
 
     def download_all(self):
         return [self.download(link) for link in self.links_list]
@@ -56,10 +59,10 @@ class Viewer():
         self.table.clear_rows()
         for link in self.links:
             self.table.add_row(link.get_row())
-        print("\033c")
-        print(self.table)
 
     def __str__(self):
+        self.update_links()
+        print("\033c")
         return self.table.get_string()
 
 def path_checker():
@@ -78,15 +81,10 @@ def main():
         Link("dwa")
         ]
     d = Downloader(links, path_checker())
-    v = Viewer(links)
-    v.update_links()
-    print(v)
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     loop.run_until_complete(asyncio.gather(*d.download_all()))
     loop.close()
-    v.update_links()
-    print(v)
 
 
 if __name__ == "__main__":
