@@ -5,7 +5,10 @@ import multiprocessing.dummy
 
 import aiohttp
 import aiofiles
+import aioconsole
 import prettytable
+
+import time
 
 SUCCESS = "Успех"
 FAIL = "Ошибка"
@@ -46,7 +49,7 @@ class Downloader():
         print(self.viewer)
 
     def download_all(self):
-        return [self.download(link) for link in self.links_list]
+        return [self.download(link) for link in self.links_list if link.status == IN_PROCESS]
 
 
 class Viewer():
@@ -72,6 +75,8 @@ def path_checker():
     return path
 
 def main():
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     links = [
         Link("https://i.pinimg.com/originals/36/75/27/367527aa5f6f0fd80d86858ae25bb089.jpg"),
         Link("https://mir-s3-cdn-cf.behance.net/projects/original/4a627163531171.Y3JvcCwxMDI3NCw4MDQyLDk2NCww.jpg"),
@@ -81,11 +86,20 @@ def main():
         Link("dwa")
         ]
     d = Downloader(links, path_checker())
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
     loop.run_until_complete(asyncio.gather(*d.download_all()))
     loop.close()
 
 
 if __name__ == "__main__":
+    s = time.time()
     main()
+    print(time.time() - s)
+
+
+
+# https://i.pinimg.com/originals/36/75/27/367527aa5f6f0fd80d86858ae25bb089.jpg
+# https://mir-s3-cdn-cf.behance.net/projects/original/4a627163531171.Y3JvcCwxMDI3NCw4MDQyLDk2NCww.jpg
+# https://www.ixpap.com/images/2022/02/Blade-Runner-Wallpaper-13.jpg
+# https://i.pinimg.com/originals/2d/a2/5a/2da25a2b249359f26f0335fc164d58c5.jpg
+# https://i.pinimg.com/originals/51/3c/86/513c863cee2dfbbd7e61b3f5f2fbeb00.png
+# dwa
