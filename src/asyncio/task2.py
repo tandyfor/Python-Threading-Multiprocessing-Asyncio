@@ -82,6 +82,9 @@ async def async_input(links: list[Link], downloader: Downloader):
         link = Link(link)
         links.append(link)
         asyncio.create_task(downloader.download(link))
+    # while True:
+    #     print(len(asyncio.all_tasks()))
+    #     if len(asyncio.all_tasks()) == 1: return
 
 
 def main():
@@ -90,6 +93,7 @@ def main():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     loop.run_until_complete(async_input(links, d))
+    loop.run_forever() # TODO: Добавить функционал для завершения.
     loop.close()
 
 
