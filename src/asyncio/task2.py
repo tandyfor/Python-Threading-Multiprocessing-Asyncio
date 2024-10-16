@@ -18,12 +18,14 @@ class Link():
     def __init__(self, link: str):
         self.link = link # TODO: Добавить поиск расширения файла для корректного сохранения.
         self.status = IN_PROCESS
+        self.time = 0
 
     def __str__(self):
         return f"{self.link} {self.status}"
 
     def get_row(self):
-        return self.link, self.status
+        # return self.link, self.status
+        return self.link, self.status, round(self.time, 2)
 
 class Downloader():
     def __init__(self, links_list: list[Link], path: str):
@@ -36,6 +38,7 @@ class Downloader():
         print(self.viewer)
         async with aiohttp.ClientSession() as session:
             try:
+                start = time.time()
                 async with session.get(link.link) as responce:
                     if responce.ok:
                         f = await aiofiles.open(f'{self.path}/file_{self.n}.jpeg', mode='wb')
@@ -43,6 +46,7 @@ class Downloader():
                         await f.write(await responce.read())
                         await f.close()
                         link.status = SUCCESS
+                        link.time = time.time() - start
                     else:
                         print(responce.status)
             except:
@@ -56,7 +60,8 @@ class Downloader():
 class Viewer():
     def __init__(self, links_list: list[Link]):
         self.table =  prettytable.PrettyTable()
-        self.table.field_names = ["Link", "Status"]
+        # self.table.field_names = ["Link", "Status"]
+        self.table.field_names = ["Link", "Status", "Download time"]
         self.links = links_list
 
     def update_links(self):
@@ -75,16 +80,22 @@ def path_checker():
         path = input("Введите путь для сохранения файлов: ")
     return path
 
-async def async_input(links: list[Link], downloader: Downloader):
+async def async_input(links: list[Link], downloader: Downloader, loop: asyncio.new_event_loop):
     while True:
         link = await aioconsole.ainput("Input linl or press Enter to exit:\n")
         if not link: break
         link = Link(link)
         links.append(link)
         asyncio.create_task(downloader.download(link))
-    # while True:
-    #     print(len(asyncio.all_tasks()))
-    #     if len(asyncio.all_tasks()) == 1: return
+    n = 0
+    while True:
+        n += 1
+        await asyncio.sleep(0.1)
+        tasks = len(asyncio.all_tasks())
+        print(f"{n} {tasks}")
+        if tasks == 1:
+            # loop.stop()
+            return
 
 
 def main():
@@ -92,8 +103,9 @@ def main():
     d = Downloader(links, path_checker())
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    loop.run_until_complete(async_input(links, d))
-    loop.run_forever() # TODO: Добавить функционал для завершения.
+    asyncio.run(async_input(links, d, loop))
+    # loop.run_in_executor(async_input(links, d, loop))
+    # loop.run_forever() # TODO: Добавить функционал для завершения.
     loop.close()
 
 
