@@ -57,6 +57,7 @@ class Viewer():
     def __init__(self, links_list: list[Link]):
         self.table =  prettytable.PrettyTable()
         self.table.field_names = ["Link", "Status"]
+        self.table.align["Link"] = 'l'
         self.links = links_list
 
     def update_links(self):
@@ -73,6 +74,8 @@ def path_checker():
     path = ""
     while not os.path.isdir(path) or not os.access(path, os.W_OK):
         path = input("Введите путь для сохранения файлов: ")
+        if not os.path.isdir(path):
+            os.makedirs(path)
     return path
 
 async def async_input(links: list[Link], downloader: Downloader):
@@ -95,16 +98,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-# https://i.pinimg.com/originals/36/75/27/367527aa5f6f0fd80d86858ae25bb089.jpg
-# https://mir-s3-cdn-cf.behance.net/projects/original/4a627163531171.Y3JvcCwxMDI3NCw4MDQyLDk2NCww.jpg
-# https://www.ixpap.com/images/2022/02/Blade-Runner-Wallpaper-13.jpg
-# https://i.pinimg.com/originals/2d/a2/5a/2da25a2b249359f26f0335fc164d58c5.jpg
-# https://i.pinimg.com/originals/51/3c/86/513c863cee2dfbbd7e61b3f5f2fbeb00.png
-# https://avatars.mds.yandex.net/i?id=1ce48e46d9be18457cc407e0fd3f84db-4969866-images-thumbs&n=13
-# https://avatars.mds.yandex.net/i?id=e81d8ced97fc0b756754d3e698a63f38_l-5281441-images-thumbs&n=13
-# https://avatars.mds.yandex.net/i?id=c35cfcea1dead6bb9760c7cc56fd5057_l-4234782-images-thumbs&n=13
-# https://img.goodfon.com/wallpaper/nbig/d/9a/devushka-aziatka-vzgliad-110.webp
-# https://yt3.ggpht.com/ytc/AKedOLQv3piyJBKo-KMp1UVlw7ameDW6-YTSZQSi4nli=s900-c-k-c0x00ffffff-no-rj
-# https://avatars.mds.yandex.net/i?id=c20fcef0886895fe7a8495c2d1f4d781_l-4569757-images-thumbs&n=13
